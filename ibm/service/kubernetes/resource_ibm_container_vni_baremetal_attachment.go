@@ -176,11 +176,11 @@ func resourceIBMContainerVNIBaremetalAttachmentRead(d *schema.ResourceData, meta
 	}
 
 	// workerID is stored in state from the create/previous read
-	workerID, _ := d.GetOk("worker_id")
+	workerID := d.Get("worker_id").(string)
 
 	// List attachments for the worker to find this specific VNI
 	input := graphql.ListVNIAttachmentsInput{
-		NodeID: workerID.(string),
+		NodeID: workerID,
 	}
 
 	resp, err := vniClient.ListAttachments(input, targetEnv)
@@ -225,7 +225,10 @@ func resourceIBMContainerVNIBaremetalAttachmentRead(d *schema.ResourceData, meta
 
 func resourceIBMContainerVNIBaremetalAttachmentDelete(d *schema.ResourceData, meta interface{}) error {
 	vniID := d.Id()
-	workerID, _ := d.GetOk("worker_id")
+	workerID, ok := d.GetOk("worker_id")
+	if !ok || workerID.(string) == "" {
+		return fmt.Errorf("worker_id is not set for VNI %s", vniID)
+	}
 
 	// Get VNI client
 	vniClient, err := getVNIClient(meta)
@@ -264,7 +267,10 @@ func resourceIBMContainerVNIBaremetalAttachmentDelete(d *schema.ResourceData, me
 
 func resourceIBMContainerVNIBaremetalAttachmentExists(d *schema.ResourceData, meta interface{}) (bool, error) {
 	vniID := d.Id()
-	workerID, _ := d.GetOk("worker_id")
+	workerID, ok := d.GetOk("worker_id")
+	if !ok || workerID.(string) == "" {
+		return false, fmt.Errorf("worker_id is not set for VNI %s", vniID)
+	}
 
 	// Get VNI client
 	vniClient, err := getVNIClient(meta)
